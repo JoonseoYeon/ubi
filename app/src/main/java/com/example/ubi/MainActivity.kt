@@ -70,57 +70,88 @@ class MainActivity : AppCompatActivity() {
         var lastInputTime = System.currentTimeMillis()
         val spannableBuilder = SpannableStringBuilder()
 
+        var lastInputLength = 0
+        var suppressTextChange = false
+
         editText.addTextChangedListener(object : TextWatcher {
-            private var previousTextLength = 0
-
             override fun afterTextChanged(s: Editable?) {
-                if (s == null || s.isEmpty()) return
+                if (s == null || s.length <= lastInputLength || suppressTextChange) return
 
-                val currentLength = s.length
+                suppressTextChange = true
 
-                // 👇 글자 추가일 때만 처리
-                if (currentLength > previousTextLength) {
-                    val now = System.currentTimeMillis()
-                    val delay = now - lastInputTime
-                    lastInputTime = now
+                val now = System.currentTimeMillis()
+                val delay = now - lastInputTime
+                lastInputTime = now
 
-                    val probabilities = computeFontProbabilities(delay)
-                    Log.d("FontProb", "delay=$delay ms → probs=$probabilities")
-                    val fontIndex = pickFontIndex(probabilities)
-                    val typeface = ResourcesCompat.getFont(this@MainActivity, fontIds[fontIndex])!!
+                val newChar = s[lastInputLength]  // 새로 입력된 문자
+                val probabilities = computeFontProbabilities(delay)
+                val fontIndex = pickFontIndex(probabilities)
+                val typeface = ResourcesCompat.getFont(this@MainActivity, fontIds[fontIndex])!!
 
-                    val lastChar = s.last()
-                    spannableBuilder.append(
-                        lastChar.toString(),
-                        CustomTypefaceSpan(typeface),
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
+                spannableBuilder.append(
+                    newChar.toString(),
+                    CustomTypefaceSpan(typeface),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
 
-                    editText.removeTextChangedListener(this)
-                    editText.setText(spannableBuilder)
-                    editText.setSelection(spannableBuilder.length)
-                    editText.addTextChangedListener(this)
-                }
+                lastInputLength = spannableBuilder.length
 
-                previousTextLength = currentLength
+                editText.setText(spannableBuilder)
+                editText.setSelection(spannableBuilder.length)
+
+                suppressTextChange = false
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
+        var lastCrossedOutRange: IntRange? = null
+        var crossoutPressCount = 0
 
-        editText.setOnKeyListener { _, keyCode, event ->
+        editText.setOnKeyListener(View.OnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_DOWN) {
                 if (spannableBuilder.isNotEmpty()) {
+
+                    // (1) 이미 X 친 단어가 있다면 → 누른 횟수 누적
+                    lastCrossedOutRange?.let { range ->
+                        crossoutPressCount++
+
+                        val length = range.last - range.first
+                        if (crossoutPressCount >= length) {
+                            spannableBuilder.delete(range.first, range.last + 1)
+                            lastCrossedOutRange = null
+                            crossoutPressCount = 0
+                        }
+
+                        editText.setText(spannableBuilder)
+                        editText.setSelection(spannableBuilder.length)
+                        lastInputLength = spannableBuilder.length
+                        return@OnKeyListener true
+                    }
+
+                    // (2) 없으면 마지막 단어 범위 찾고 X 치기
                     val fullText = spannableBuilder.toString()
                     val end = spannableBuilder.length
-
-                    // 2. 마지막 공백 또는 줄바꿈 기준으로 단어 시작점 찾기
                     val start = fullText.lastIndexOfAny(charArrayOf(' ', '\n'), end - 1).let {
                         if (it == -1) 0 else it + 1
                     }
 
-                    // 3. 해당 범위에 CrossoutSpan 적용 (X 긋기)
+                    if (start == end) {
+                        // 공백 한 글자만 있을 경우 제거
+                        if (spannableBuilder.isNotEmpty()) {
+                            spannableBuilder.delete(end - 1, end)
+                            editText.setText(spannableBuilder)
+                            editText.setSelection(spannableBuilder.length)
+                            lastInputLength = spannableBuilder.length
+                        }
+                        return@OnKeyListener true
+                    }
+
+                    // 기존 CrossoutSpan 제거
+                    spannableBuilder.getSpans(start, end, CrossoutSpan::class.java).forEach {
+                        spannableBuilder.removeSpan(it)
+                    }
+
                     spannableBuilder.setSpan(
                         CrossoutSpan(),
                         start,
@@ -128,15 +159,16 @@ class MainActivity : AppCompatActivity() {
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                     )
 
-                    // 4. UI 반영
+                    lastCrossedOutRange = start until end
+                    crossoutPressCount = 1
+
                     editText.setText(spannableBuilder)
                     editText.setSelection(spannableBuilder.length)
+                    return@OnKeyListener true
                 }
-                true // ← 백스페이스 이벤트 소비했음
-            } else {
-                false
             }
-        }
+            false
+        })
         chatAdapter = ChatAdapter(messages)
         chatRecyclerView.layoutManager = LinearLayoutManager(this)
         chatRecyclerView.adapter = chatAdapter
