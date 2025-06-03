@@ -6,21 +6,30 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
+import android.widget.Button
 
-class ChatAdapter(private val messages: List<CharSequence>) :
-    RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
+class ChatAdapter(
+    private val messages: List<CharSequence>,
+    private val onItemClick: ((Int) -> Unit)? = null
+) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
 
-    class ChatViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val messageText: TextView = view.findViewById(R.id.chatMessage)
+    class MessageViewHolder(val button: Button) : RecyclerView.ViewHolder(button)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
+        val button = Button(parent.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+        return MessageViewHolder(button)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_chat, parent, false)
-        return ChatViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
-        holder.messageText.text = messages[position] // ✅ SpannableString 그대로 적용
+    override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
+        holder.button.text = messages[position]
+        holder.button.setOnClickListener {
+            onItemClick?.invoke(position)
+        }
     }
 
     override fun getItemCount(): Int = messages.size

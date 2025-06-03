@@ -9,7 +9,7 @@
         android:id="@+id/chatMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
+        android:textSize="30sp"
         android:padding="12dp"
         android:fontFamily="@font/myfont1regular" />
 </LinearLayout>

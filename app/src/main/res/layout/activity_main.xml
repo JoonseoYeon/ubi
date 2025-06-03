@@ -13,17 +13,35 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+        <!-- 메시지 입력창 -->
         <EditText
             android:id="@+id/messageInput"
             android:layout_width="0dp"
+            android:layout_height="87dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
             android:hint="Type a message" />
 
-        <Button
-            android:id="@+id/sendButton"
+        <!-- 버튼 세로로 묶기 -->
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Send" />
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="bottom|end">
+
+            <Button
+                android:id="@+id/sendButton"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_marginBottom="4dp"
+                android:text="Send" />
+
+            <Button
+                android:id="@+id/button"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:text="See" />
+        </LinearLayout>
+
     </LinearLayout>
+
 </LinearLayout>
