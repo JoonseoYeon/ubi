@@ -1,5 +1,6 @@
 package com.example.ubi
 
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,6 +28,7 @@ class ChatAdapter(
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         holder.button.text = messages[position]
+        holder.button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 50f)
         holder.button.setOnClickListener {
             onItemClick?.invoke(position)
         }

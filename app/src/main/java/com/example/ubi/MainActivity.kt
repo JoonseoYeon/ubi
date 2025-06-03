@@ -55,17 +55,17 @@ class MainActivity : AppCompatActivity() {
         val chatRecyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         val editText = findViewById<EditText>(R.id.messageInput)
         val sendButton = findViewById<Button>(R.id.sendButton)
-        val seeButton = findViewById<Button>(R.id.button)
+        val addButton = findViewById<Button>(R.id.addButton)
 
         val font = ResourcesCompat.getFont(this, R.font.myfont1regular)
         editText.typeface = font
 
-        seeButton.setOnClickListener {
-            messages.clear()
-            lockedMessages.forEachIndexed { index, _ ->
-                messages.add(SpannableString("${index + 1}. message"))
+        addButton.setOnClickListener {
+            if (spannableBuilder.isNotEmpty()) {
+                messages.add(SpannableString(spannableBuilder))
+                chatAdapter.notifyDataSetChanged()
+                resetInput(editText)
             }
-            chatAdapter.notifyDataSetChanged()
         }
 
         sendButton.setOnClickListener {
@@ -82,12 +82,16 @@ class MainActivity : AppCompatActivity() {
 
                         val conditionInput = EditText(this)
                         conditionInput.hint = "ex> flower"
-                        val imageCheckBox = CheckBox(this).apply { text = "Picture condition?" }
+                        val imageCheckBox = CheckBox(this).apply { text = "Picture" }
+                        val imageCheckBox2 = CheckBox(this).apply { text = "more option in" }
+                        val imageCheckBox3 = CheckBox(this).apply { text = "future" }
 
                         val layout = LinearLayout(this).apply {
                             orientation = LinearLayout.VERTICAL
                             addView(conditionInput)
                             addView(imageCheckBox)
+                            addView(imageCheckBox2)
+                            addView(imageCheckBox3)
                         }
 
                         builder.setView(layout)
@@ -238,7 +242,7 @@ class MainActivity : AppCompatActivity() {
                 .build()
 
             val request = Request.Builder()
-                .url("https://0716-34-124-233-178.ngrok-free.app/analyze")
+                .url("https://a490-34-138-248-183.ngrok-free.app/analyze")
                 .post(requestBody)
                 .build()
 
